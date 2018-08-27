@@ -13,13 +13,13 @@ Router based flood send.
             Exception : NetworkFail:
             - Timeout / Refused
 - Router layer
-    - C Host
+    - C Host - done
         - pubkey : PubKey
         - S Group
             - hosts : Array(Host)
     - C Eplase
         - INF = ...
-    - C Edge
+    - C Edge - done
         - from, to : Host
         - address : Address
         - eplase : Eplase

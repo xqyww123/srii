@@ -1,0 +1,66 @@
+syntax = "proto2";
+package SRII.router;
+
+message Host {
+    required bytes identity = 1;
+}
+message Group {
+    repeated Host hosts = 1;
+}
+
+message Edge {
+    required Host from = 1;
+    required Host toto = 2;
+    required Address address = 3;
+    required uint64 capacity = 4;
+    message Address {
+        required string location = 1;
+        required Family family = 2;
+        required Protocal protocal = 3;
+        enum Family {
+            UNIX = 1;
+            INET = 2;
+            INET6 = 10;
+        };
+        enum Protocal {
+            UNIXP= 1;
+            TCP  = 2;
+            QUIC = 3;
+            ZMQ  = 4;
+        }
+    }
+}
+
+message SubGraph {
+    repeated Edge edges = 1;
+}
+
+message RouterPeice {
+    required Graph graph = 1;
+    required Host host = 2;
+    required uint32 version = 3;
+}
+
+message Send {
+    required uint32 dest_ref = 1;
+    required bytes data = 2;
+}
+message Recv {
+    required uint32 from_ref = 1;
+    required bytes data = 2;
+}
+message Query {
+    required uint32 ref = 1;
+    message Result {
+        oneof host_or_group {
+            Host host = 2;
+            Group group = 3;
+        }
+    }
+}
+message Judge {
+    required bool ok = 1;
+    optional uint32 reason = 2;
+    optional string message = 3;
+}
+

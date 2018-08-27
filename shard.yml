@@ -4,6 +4,10 @@ version: 0.1.0
 authors:
   - Shirotsu Essential <xqyww123@gmail.com>
 
+dependencies:
+  protobuf:
+    github: jeromegn/protobuf.cr
+
 targets:
   srii:
     main: src/srii.cr

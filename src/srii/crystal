@@ -1,0 +1,30 @@
+syntax = "proto2";
+package SRII;
+
+message Host {
+    required bytes identity;
+}
+
+message Edge {
+    required Host from;
+    required Host toto;
+    required uint64 capacity;
+}
+
+message Graph {
+    repeated Edge edges;
+}
+
+message RouterPeice {
+    required Graph graph;
+    required Host host;
+    required uint32 version;
+}
+require "../src/protobuf"
+
+STDERR.puts "Generating protobuf classes... (protobuf.cr v#{Protobuf::VERSION})"
+
+req = Protobuf::CodeGeneratorRequest.from_protobuf(STDIN)
+res = Protobuf::Generator.compile(req)
+
+STDOUT.print(res.to_protobuf.rewind.to_s)
