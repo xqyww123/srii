@@ -1,8 +1,11 @@
 syntax = "proto2";
 package SRII.router;
 
+message Identity {
+    required bytes data = 1;
+}
 message Host {
-    required bytes identity = 1;
+    required Identity identity = 1;
 }
 message Group {
     repeated Host hosts = 1;

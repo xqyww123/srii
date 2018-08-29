@@ -154,5 +154,35 @@ module OpenSSL::EC
       check LibCryptoEC.point_set_affine_coordinates_GFp group, self, x, y, ctx
       return x, y
     end
+
+    macro operation(define)
+        def {{define.name}}(group : Group, {{define.args}} {{",".id if define.args.class == "ArrayLiteral"}} ctx : Bignum::Context? = nil)
+            ret = Point.new
+            {{define.body}}
+            ret
+        end
+        {{"# same as `#{define.name}`, but replaces self by the result.".id}}
+        def {{define.name}}!(group : Group, {{define.args}} {{",".id if define.args.class == "ArrayLiteral"}} ctx : Bignum::Context? = nil)
+            ret = self
+            {{define.body}}
+            self
+        end
+    end
+
+    operation def add(o : Point)
+      check LibCryptoEC.point_add group, self, self, o, ctx
+    end
+
+    # returns generator * n + self * m
+    operation def mul(m : Bignum, n : Bignum? = nil)
+      ret = Point.new
+      check LibCryptoEC.point_mul group, ret, n, self, m, ctx
+      ret
+    end
+
+    def self.mul_generator(group : Group, n : Bignum, ctx : Bignum::Context? = nil)
+      ret = Point.new
+      check LibCryptoEC.point_mul gorup, n, nil, nil, ctx
+    end
   end
 end

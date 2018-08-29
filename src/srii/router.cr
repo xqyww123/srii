@@ -18,12 +18,14 @@ module SRII
         required :family, Socket::Family, 2
         required :protocal, Address::Protocal, 3
       end
+      def_equals_and_hash @location, @family, @protocal
     end
 
     # belongs to one graph!
     class Edge
       include Protobuf::Message
-      include LinkLst::Node(Edge)
+      # include Graph::LinkLstForward::Node(Edge)
+      include Graph::LinkLstReverse::Node(Edge)
       contract_of "proto2" do
         required :from, Host, 1
         required :toto, Host, 2
@@ -31,9 +33,9 @@ module SRII
         required :capacity, :uint64, 4
       end
 
-      # nanoseconds for 1byte
+      # unit : 0.001 ns/byte
       def latency : UInt64
-        1E9 / @capacity + 1
+        1E12 / @capacity + 1
       end
     end
 
@@ -47,19 +49,16 @@ module SRII
         def_equals_and_hash @edges
       end
 
+      getter source : Host
+
+      # link_list Forward
+      link_list Reverse
       @subs = Set(Sub).new
-      @host_edges = {} of Host => LinkLst(Edge)
-      @key_edge = {} of Edge => Path
+      # @host_edges = {} of Host => LinkLstForward(Edge)
+      @host_edges_reverse = {} of Host => LinkLstReverse(Edge)
+      @key_edge = Path::Set
       @host_path = {} of Host => Path
-
-      def path(host : Host) : Path?
-        ret = @host_path[host]
-        ret && (ret.invalid? ? nil : ret)
-      end
-
-      def path?(host : Host) : Path
-        @host_path[host] ||= Path.new
-      end
+      @reshort_edges = {} of Host => Array(Edge)
 
       def subs : Iterator(Sub)
         @subs.each
@@ -68,15 +67,22 @@ module SRII
       def remove_sub(sub : Sub)
         @subs.remove sub
         sub.edges.each { |a|
-          a.remove
+          a.remove_lst_forward
+          a.remove_lst_reverse
           path = @key_edge[a]?
-          path.invalid if path
+          path.invalid do |host|
+            @host_edges_reverse[host].try &.each { |b|
+              (@reshort_edges[b.from] ||= [] of Edge) << b
+            }
+          end if path
         }
       end
 
       private def _add_sub(sub : Sub)
         sub.edges.each { |a|
-          (@host_edges[a.from] ||= LinkLst(Edge).new) << a
+          # (@host_edges[a.from] ||= LinkLstForward(Edge).new) << a
+          (@host_edges_reverse[a.toto] ||= LinkLstReverse(Edge).new) << a
+          (@reshort_edges[a.from] ||= [] of Edge) << a
         }
       end
 
@@ -85,10 +91,16 @@ module SRII
         _add_sub sub
       end
 
-      def initialize
+      def update_shortest
+        return unless @reshort_edges.empty?
+        SHORTEST_ALG.update_shortest
+        @reshort_edges.clear
       end
 
-      def initialize(@subs)
+      def initialize(@source)
+      end
+
+      def initialize(@source, @subs)
         _add_sub @subs
       end
 
@@ -115,11 +127,22 @@ module SRII
           @latency == UInt64::MAX
         end
 
-        def invalid
+        def invalid(&block)
           return if invalid?
           @latency = UInt64::MAX
-          successors.each &.invalid
+          yield self
+          successors.each &.invalid &block
           @successor = @first = @last = nil
+        end
+
+        def invalid
+          invalid { }
+        end
+
+        class Set < Hash(Host, Path)
+          def fetch(host : Host) : Path
+            fetch(host) { |key| self[key] = Path.new }
+          end
         end
       end
 

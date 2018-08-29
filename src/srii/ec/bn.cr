@@ -41,11 +41,16 @@ module OpenSSL
       @to_unsafe = LibCryptoBN.new
     end
 
+    def initialize(number : Int)
+      @to_unsafe = LibCryptoBN.new
+      check LibCryptoBN.set_word number
+    end
+
     ONE     = new LibCryptoBN.value_one
     OPTIONS = String.new LibCryptoBN.options
 
     private def check(i : LibC::Int)
-      Error.check i
+      Error.check if i != 1
       self
     end
 
