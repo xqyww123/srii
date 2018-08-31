@@ -4,13 +4,6 @@ module SRII
   class Host
     struct Identity
       getter pubkey : OpenSSL::EC::Point
-      include Protobuf::Message
-
-      def initialize(buf : Protobuf::Buffer)
-        buf.read_info
-        raw = buf.read_bytes.not_nil!
-        @pubkey = OpenSSL::EC::Point.from_bytes GROUP, raw
-      end
 
       def initialize(@pubkey)
       end
@@ -18,22 +11,6 @@ module SRII
       def to_bytes
         @pubkey.to_bytes ::SRII::Config::EC::GROUP,
           OpenSSL::EC::Point::ConversionForm::Compressed
-      end
-
-      def to_protobuf(io : IO)
-        buf = Protobuf::Buffer.new(io)
-        buf.write_info 1, 2
-        buf.write_bytes to_bytes
-      end
-
-      def to_protobuf
-        io = IO::Memory.new
-        to_protobuf io
-        io
-      end
-
-      def self.from_protobuf(io : IO)
-        new Protobuf::Buffer.new io
       end
 
       GROUP = Config::EC::GROUP
@@ -45,31 +22,20 @@ module SRII
       def ==(o : Identity)
         self == o.pubkey
       end
+
+      def initialize(pull : MessagePack::Unpacker)
+        @pubkey = OpenSSL::EC::Point.from_bytes GROUP, pull.read_binary
+      end
+
+      def to_msgpack(packer : MessagePack::Packer)
+        packer.write to_bytes
+      end
     end
 
     delegate pubkey, to: @identity
-    include Protobuf::Message
-
-    contract_of "proto2" do
-      required :identity, Identity, 1
-    end
-
-    # def to_protobuf(io : IO)
-    #   raise "asd"
-    #   buf = Protobuf::Buffer.new(io)
-    #   buf.write_message self
-    # end
-
-    # class ::Protobuf::Buffer
-    #   def write_message(host : ::SRII::Host)
-    #     write_info 1, 2
-    #     write_message host.identity
-    #   end
-    # end
-
-    # def self.from_protobuf(io : IO)
-    #   new Protobuf::Buffer.new io
-    # end
+    getter identity : Identity
+    MessagePack.mapping({identity: {key: "i", type: Identity}},
+      strict: true, emit_nulls: false)
 
     @@host_cnt : Int32 = 0
 
@@ -96,11 +62,9 @@ module SRII
     end
 
     struct Group
-      include Protobuf::Message
+      include MessagePack::Serializable
 
-      contract_of "proto2" do
-        repeated :hosts, Host, 1
-      end
+      getter hosts : Array(Host)
       def_equals_and_hash @hosts
     end
   end

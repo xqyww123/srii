@@ -5,7 +5,6 @@ require "./tools/link_lst.cr"
 module SRII
   class Router
     struct Address
-      include Protobuf::Message
       enum Protocal
         UNIXP = 1
         TCP   = 2
@@ -13,24 +12,27 @@ module SRII
         ZMQ   = 4
       end
 
-      contract_of "proto2" do
-        required :location, :string, 1
-        required :family, Socket::Family, 2
-        required :protocal, Address::Protocal, 3
+      include MessagePack::Serializable
+
+      getter location : String
+      getter family : Socket::Family
+      getter protocal : Protocal
+
+      def initialize(@location, @family, @protocal)
       end
+
       def_equals_and_hash @location, @family, @protocal
     end
 
     # belongs to one graph!
     class Edge
-      include Protobuf::Message
       # include Graph::LinkLstForward::Node(Edge)
-      include Graph::LinkLstReverse::Node(Edge)
-      contract_of "proto2" do
-        required :from, Host, 1
-        required :toto, Host, 2
-        required :address, Address, 3
-        required :capacity, :uint64, 4
+      getter from : Host
+      getter toto : Host
+      getter address : Address
+      getter capacity : UInt64
+
+      def initialize(@from, @toto, @address, @capacity)
       end
 
       # unit : 0.001 ns/byte
@@ -52,7 +54,12 @@ module SRII
       getter source : Host
 
       # link_list Forward
-      link_list Reverse
+      SRII.link_list Reverse
+
+      class Edge
+        include Graph::LinkLstReverse::Node(Edge)
+      end
+
       @subs = Set(Sub).new
       # @host_edges = {} of Host => LinkLstForward(Edge)
       @host_edges_reverse = {} of Host => LinkLstReverse(Edge)

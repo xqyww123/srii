@@ -43,7 +43,7 @@ module OpenSSL
 
     def initialize(number : Int)
       @to_unsafe = LibCryptoBN.new
-      check LibCryptoBN.set_word number
+      check LibCryptoBN.set_word self, number
     end
 
     ONE     = new LibCryptoBN.value_one

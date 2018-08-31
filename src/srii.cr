@@ -1,6 +1,6 @@
-require "protobuf"
+require "msgpack"
 require "./srii/*"
-require "socket.cr"
+require "socket"
 
 # TODO: Write documentation for `Srii`
 module Srii

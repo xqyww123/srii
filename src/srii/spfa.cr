@@ -2,8 +2,6 @@ module SRII
   class Router::Graph
     alias SHORTEST_ALG = SPFA
 
-    link_list shorten
-
     module SPFA
       def self.update_shortest(source : Host,
                                pathes : Path::Set,

@@ -5,8 +5,8 @@ authors:
   - Shirotsu Essential <xqyww123@gmail.com>
 
 dependencies:
-  protobuf:
-    github: jeromegn/protobuf.cr
+  msgpack:
+    github: crystal-community/msgpack-crystal
 
 targets:
   srii:

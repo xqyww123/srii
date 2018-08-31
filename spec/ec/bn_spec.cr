@@ -8,6 +8,6 @@ describe OpenSSL::Bignum do
     end
   end
   it "rand" do
-    p Bignum.rand 1, 2, 3
+    Bignum.rand 3, 2, 3
   end
 end

@@ -7,5 +7,9 @@ include OpenSSL::EC
 alias Host = SRII::Host
 
 def make_host(i : Int)
-  Host.new Point.mul_generator Bignum.new i
+  Host.new make_identity i
+end
+
+def make_identity(i : Int)
+  Host::Identity.new Point.mul_generator Config::EC::GROUP, Bignum.new i
 end

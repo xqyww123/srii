@@ -1,7 +1,7 @@
 module SRII
   macro link_list(name)
-    {% name_subfix = name ? "_#{name.downcase}" : "" %}
-  struct LinkLst{{name.capitalize}}(T)
+    {% name_subfix = name ? "_#{name.id.downcase}" : "" %}
+    struct LinkLst{{name.id.capitalize if name}}(T)
     module Node(T)
       class AlreadyInList(T) < Exception
         getter node : Node(T)
@@ -11,36 +11,36 @@ module SRII
         end
       end
 
-      property previous{{name_subfix}} : Node(T)?
-      property following{{name_subfix}} : Node(T)?
+      property previous{{name_subfix.id}} : Node(T)?
+      property following{{name_subfix.id}} : Node(T)?
 
-      def append_lst{{name_subfix}}(node : Node(T))
-        node.not_in_lst{{name_subfix}}!
-        node.previous{{name_subfix}} = self
-        node.following{{name_subfix}} = @following.try &.previous{{name_subfix}} = node
-        @following{{name_subfix}} = node
+      def append_lst{{name_subfix.id}}(node : Node(T))
+        node.not_in_lst{{name_subfix.id}}!
+        node.previous{{name_subfix.id}} = self
+        node.following{{name_subfix.id}} = @following.try &.previous{{name_subfix.id}} = node
+        @following{{name_subfix.id}} = node
       end
 
-      def insert_lst{{name_subfix}}(node : Node(T))
-        node.not_in_lst{{name_subfix}}!
-        node.previous{{name_subfix}} = @previous{{name_subfix}}.try &.following{{name_subfix}} = node
-        node.following{{name_subfix}} = self
-        @previous{{name_subfix}} = node
+      def insert_lst{{name_subfix.id}}(node : Node(T))
+        node.not_in_lst{{name_subfix.id}}!
+        node.previous{{name_subfix.id}} = @previous{{name_subfix.id}}.try &.following{{name_subfix.id}} = node
+        node.following{{name_subfix.id}} = self
+        @previous{{name_subfix.id}} = node
       end
 
-      def remove_lst{{name_subfix}}
-        @previous{{name_subfix}}.try &.following{{name_subfix}} = @following
-        @following{{name_subfix}}.try &.previous{{name_subfix}} = @previous{{name_subfix}}
-        @previous{{name_subfix}} = @following{{name_subfix}} = nil
+      def remove_lst{{name_subfix.id}}
+        @previous{{name_subfix.id}}.try &.following{{name_subfix.id}} = @following
+        @following{{name_subfix.id}}.try &.previous{{name_subfix.id}} = @previous{{name_subfix.id}}
+        @previous{{name_subfix.id}} = @following{{name_subfix.id}} = nil
         self
       end
 
-      def not_in_lst{{name_subfix}}!
-        raise AlreadyInList(T).new if in_list{{name_subfix}}?
+      def not_in_lst{{name_subfix.id}}!
+        raise AlreadyInList(T).new if in_list{{name_subfix.id}}?
       end
 
-      def in_list{{name_subfix}}? : Bool
-        @previous{{name_subfix}} || @following{{name_subfix}}
+      def in_list{{name_subfix.id}}? : Bool
+        @previous{{name_subfix.id}} || @following{{name_subfix.id}}
       end
 
       def as_element : T
@@ -69,7 +69,7 @@ module SRII
     def push(ele : Node(T) | T)
       ele = Wrapper(T).new ele unless ele.is_a? Node(T)
       if last = @last
-        last.append_lst{{name_subfix}} ele
+        last.append_lst{{name_subfix.id}} ele
       else
         @last = ele
       end
@@ -82,7 +82,7 @@ module SRII
     def unshift(ele : Node(T) | T)
       ele = Wrapper(T).new ele unless ele.is_a? Node(T)
       if first = @first
-        first.insert_lst{{name_subfix}} ele
+        first.insert_lst{{name_subfix.id}} ele
       else
         @first = Node.new ele
       end
@@ -100,7 +100,7 @@ module SRII
     end
 
     macro def_iterator(forward)
-      struct {{forward.id.capitalize}}Iterator(T)
+      struct \{{forward.id.capitalize}}Iterator(T)
         include Iterator(T)
         getter head : Node(T)
         getter current : Node(T) | Stop
@@ -111,7 +111,7 @@ module SRII
 
         def next : T | Stop
           return Stop::INSTANCE if (c = @current).is_a? Stop
-          t = c.{{forward.id}} || Stop::INSTANCE
+          t = c.\{{forward.id}} || Stop::INSTANCE
           @current = (t.same? @head) ? Stop::INSTANCE : t
           c.as_element
         end

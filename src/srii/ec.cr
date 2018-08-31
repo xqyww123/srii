@@ -156,13 +156,17 @@ module OpenSSL::EC
     end
 
     macro operation(define)
-        def {{define.name}}(group : Group, {{define.args}} {{",".id if define.args.class == "ArrayLiteral"}} ctx : Bignum::Context? = nil)
+        def {{define.name}}(group : Group,
+            {% for arg in define.args %} {{arg}}, {% end %}
+                ctx : Bignum::Context? = nil)
             ret = Point.new
             {{define.body}}
             ret
         end
         {{"# same as `#{define.name}`, but replaces self by the result.".id}}
-        def {{define.name}}!(group : Group, {{define.args}} {{",".id if define.args.class == "ArrayLiteral"}} ctx : Bignum::Context? = nil)
+        def {{define.name}}!(group : Group,
+            {% for arg in define.args %} {{arg}}, {% end %}
+                ctx : Bignum::Context? = nil)
             ret = self
             {{define.body}}
             self
@@ -181,8 +185,9 @@ module OpenSSL::EC
     end
 
     def self.mul_generator(group : Group, n : Bignum, ctx : Bignum::Context? = nil)
-      ret = Point.new
-      check LibCryptoEC.point_mul gorup, n, nil, nil, ctx
+      ret = Point.new group
+      check LibCryptoEC.point_mul group, ret, n, nil, nil, ctx
+      ret
     end
   end
 end

@@ -249,15 +249,7 @@ lib LibCryptoEC
   fun group_set_generator = EC_GROUP_set_generator(group : Group, generator : Point, order : Bignum*, cofactor : Bignum*) : LibC::Int
   type Point = Void*
 
-  struct BignumSt
-    d : LibC::ULong*
-    top : LibC::Int
-    dmax : LibC::Int
-    neg : LibC::Int
-    flags : LibC::Int
-  end
-
-  type Bignum = BignumSt
+  alias Bignum = LibCryptoBN::Bignum
   fun group_get0_generator = EC_GROUP_get0_generator(group : Group) : Point
   fun group_get_mont_data = EC_GROUP_get_mont_data(group : Group) : BnMontCtx*
 
