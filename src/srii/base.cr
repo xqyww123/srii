@@ -37,6 +37,9 @@ module SRII
     MessagePack.mapping({identity: {key: "i", type: Identity}},
       strict: true, emit_nulls: false)
 
+    def initialize(@identity)
+    end
+
     @@host_cnt : Int32 = 0
 
     def self.assign_id
@@ -65,6 +68,10 @@ module SRII
       include MessagePack::Serializable
 
       getter hosts : Array(Host)
+
+      def initialize(@hosts)
+      end
+
       def_equals_and_hash @hosts
     end
   end

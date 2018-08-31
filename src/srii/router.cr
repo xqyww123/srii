@@ -14,8 +14,11 @@ module SRII
 
       include MessagePack::Serializable
 
+      @[MessagePack::Field(key: "l")]
       getter location : String
+      @[MessagePack::Field(key: "f")]
       getter family : Socket::Family
+      @[MessagePack::Field(key: "p")]
       getter protocal : Protocal
 
       def initialize(@location, @family, @protocal)
@@ -31,6 +34,7 @@ module SRII
       getter toto : Host
       getter address : Address
       getter capacity : UInt64
+      def_equals_and_hash from, toto, address, capacity
 
       def initialize(@from, @toto, @address, @capacity)
       end
@@ -43,11 +47,11 @@ module SRII
 
     class Graph
       struct Sub
-        include Protobuf::Message
+        getter edges : Array(Edge)
 
-        contract_of "proto2" do
-          repeated :edges, Edge, 1
+        def initialize(@edges)
         end
+
         def_equals_and_hash @edges
       end
 
@@ -56,7 +60,7 @@ module SRII
       # link_list Forward
       SRII.link_list Reverse
 
-      class Edge
+      class SRII::Router::Edge
         include Graph::LinkLstReverse::Node(Edge)
       end
 
