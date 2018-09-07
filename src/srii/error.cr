@@ -10,6 +10,22 @@ module SRII
     end
   end
 
+  class HostIndNotRegistered < Error
+    getter ind : Int32
+
+    def initialize(@ind)
+      super "Host ##{@ind} not registered or been invalid"
+    end
+  end
+
+  class HostHasRegistered < Error
+    getter identity : Host::Identity
+
+    def initialize(@identity)
+      super "Host #{@identity} has already been registered"
+    end
+  end
+
   class BadMsgPack < Exception
     getter what : String
 

@@ -29,17 +29,17 @@ module SRII
 
         def initialize(pull : MessagePack::Unpacker)
           raise BadMsgPack.new "array size of Graph::Sub must be 2" if pull.read_array_size != 2
-          hosts_size = p pull.read_array_size
+          hosts_size = pull.read_array_size
           hosts = Array(Host).new hosts_size
           hosts_size.times {
             hosts << Host.new pull
           }
-          p hosts
-          edge_size = p pull.read_array_size
+          hosts
+          edge_size = pull.read_array_size
           @edges = Array(Edge).new edge_size
           edge_size.times {
             raise BadMsgPack.new "array size of Edge should be 4" unless pull.read_array_size == 4
-            @edges << p Edge.new hosts[pull.read_uint], hosts[pull.read_uint],
+            @edges << Edge.new hosts[pull.read_uint], hosts[pull.read_uint],
               Address.new(pull), pull.read_uint.to_u64
           }
         end

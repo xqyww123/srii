@@ -17,29 +17,29 @@ module SRII
       def append_lst{{name_subfix.id}}(node : Node(T))
         node.not_in_lst{{name_subfix.id}}!
         node.previous{{name_subfix.id}} = self
-        node.following{{name_subfix.id}} = @following.try &.previous{{name_subfix.id}} = node
+        node.following{{name_subfix.id}} = @following{{name_subfix.id}}.tap &.try &.previous{{name_subfix.id}} = node
         @following{{name_subfix.id}} = node
       end
 
       def insert_lst{{name_subfix.id}}(node : Node(T))
         node.not_in_lst{{name_subfix.id}}!
-        node.previous{{name_subfix.id}} = @previous{{name_subfix.id}}.try &.following{{name_subfix.id}} = node
+        node.previous{{name_subfix.id}} = @previous{{name_subfix.id}}.tap &.try &.following{{name_subfix.id}} = node
         node.following{{name_subfix.id}} = self
         @previous{{name_subfix.id}} = node
       end
 
       def remove_lst{{name_subfix.id}}
-        @previous{{name_subfix.id}}.try &.following{{name_subfix.id}} = @following
+        @previous{{name_subfix.id}}.try &.following{{name_subfix.id}} = @following{{name_subfix.id}}
         @following{{name_subfix.id}}.try &.previous{{name_subfix.id}} = @previous{{name_subfix.id}}
         @previous{{name_subfix.id}} = @following{{name_subfix.id}} = nil
         self
       end
 
       def not_in_lst{{name_subfix.id}}!
-        raise AlreadyInList(T).new if in_list{{name_subfix.id}}?
+        raise AlreadyInList(T).new self if in_list{{name_subfix.id}}?
       end
 
-      def in_list{{name_subfix.id}}? : Bool
+      def in_list{{name_subfix.id}}?
         @previous{{name_subfix.id}} || @following{{name_subfix.id}}
       end
 
@@ -59,61 +59,78 @@ module SRII
         @ele
       end
     end
+    class Head(T)
+      include Node(T)
+      def as_element : T
+        raise "Head cannot as a element"
+      end
+    end
 
-    property first : Node(T)?
-    property last : Node(T)?
+    @head : Head(T)
 
     def initialize
+      @head = Head(T).new
+      @head.following{{name_subfix.id}} = @head
+      @head.previous{{name_subfix.id}} = @head
     end
 
     def push(ele : Node(T) | T)
       ele = Wrapper(T).new ele unless ele.is_a? Node(T)
-      if last = @last
-        last.append_lst{{name_subfix.id}} ele
-      else
-        @last = ele
-      end
+      @head.insert_lst{{name_subfix.id}} ele
     end
 
     def <<(ele : Node(T) | T)
       push ele
     end
 
-    def unshift(ele : Node(T) | T)
+    def shift(ele : Node(T) | T)
       ele = Wrapper(T).new ele unless ele.is_a? Node(T)
-      if first = @first
-        first.insert_lst{{name_subfix.id}} ele
-      else
-        @first = Node.new ele
-      end
+      @head.append_lst{{name_subfix.id}} ele
     end
-    def pop(ele)
-        unshift ele
+    def pop
+      ret = @head.following{{name_subfix.id}}.not_nil!
+      return nil if ret.same? @head
+      ret.remove_lst{{name_subfix.id}}
+      ret.as_element
+    end
+    def unshift
+      pop
+    end
+    def unpush
+      ret = @head.previous{{name_subfix.id}}.not_nil!
+      return nil if ret.same? @head
+      ret.remove_lst{{name_subfix.id}}
     end
 
+    include Iterable(T)
+    include Enumerable(T)
     def each
-      FollowingIterator.new @first
+      FollowingIterator(T).new @head
+    end
+    def each(&block : T -> _)
+      each.each &block
     end
 
     def reverse_each
-      PreviousIterator.new @last
+      PreviousIterator(T).new @head
     end
 
     macro def_iterator(forward)
       struct \{{forward.id.capitalize}}Iterator(T)
         include Iterator(T)
-        getter head : Node(T)
+        getter head : Node(T) | Stop
         getter current : Node(T) | Stop
 
-        def initialize(@head)
-          @current = @head
+        def initialize(head)
+          @current = @head = head || stop
         end
 
         def next : T | Stop
           return Stop::INSTANCE if (c = @current).is_a? Stop
-          t = c.\{{forward.id}} || Stop::INSTANCE
-          @current = (t.same? @head) ? Stop::INSTANCE : t
-          c.as_element
+          t = c.\{{forward.id}}{{name_subfix.id}}.not_nil!
+          t = Stop::INSTANCE if t.is_a? Head
+          @current = t
+          t.is_a?(Stop) ? t : t.as_element
         end
 
         def rewind

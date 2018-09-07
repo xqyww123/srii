@@ -29,7 +29,6 @@ module SRII
 
     # belongs to one graph!
     class Edge
-      # include Graph::LinkLstForward::Node(Edge)
       getter from : Host
       getter toto : Host
       getter address : Address
@@ -41,7 +40,19 @@ module SRII
 
       # unit : 0.001 ns/byte
       def latency : UInt64
-        1E12 / @capacity + 1
+        1_000_000_000_000_u64 / @capacity + 1u64
+      end
+
+      def to_s(io : IO)
+        from.to_s io
+        io << "--"
+        latency.to_s io
+        io << "->"
+        toto.to_s io
+      end
+
+      def inspect(io : IO)
+        to_s io
       end
     end
 
@@ -57,22 +68,29 @@ module SRII
 
       getter source : Host
 
-      # link_list Forward
+      SRII.link_list Forward
       SRII.link_list Reverse
 
       class SRII::Router::Edge
         include Graph::LinkLstReverse::Node(Edge)
+        include Graph::LinkLstForward::Node(Edge)
       end
 
       @subs = Set(Sub).new
-      # @host_edges = {} of Host => LinkLstForward(Edge)
+      @host_edges = {} of Host => LinkLstForward(Edge)
       @host_edges_reverse = {} of Host => LinkLstReverse(Edge)
-      @key_edge = Path::Set
-      @host_path = {} of Host => Path
-      @reshort_edges = {} of Host => Array(Edge)
+      @pathes = Path::Set.new
+      # brink of not changed nodes, yet the start point to
+      # shorten modified nodes.
+      @reshort_nodes = Set(Host).new
 
       def subs : Iterator(Sub)
         @subs.each
+      end
+
+      def path(host : Host)
+        update_shortest
+        @pathes[host]
       end
 
       def remove_sub(sub : Sub)
@@ -80,10 +98,10 @@ module SRII
         sub.edges.each { |a|
           a.remove_lst_forward
           a.remove_lst_reverse
-          path = @key_edge[a]?
+          path = @pathes[a]?
           path.invalid do |host|
             @host_edges_reverse[host].try &.each { |b|
-              (@reshort_edges[b.from] ||= [] of Edge) << b
+              @reshort_nodes.add b.from
             }
           end if path
         }
@@ -91,21 +109,21 @@ module SRII
 
       private def _add_sub(sub : Sub)
         sub.edges.each { |a|
-          # (@host_edges[a.from] ||= LinkLstForward(Edge).new) << a
+          (@host_edges[a.from] ||= LinkLstForward(Edge).new) << a
           (@host_edges_reverse[a.toto] ||= LinkLstReverse(Edge).new) << a
-          (@reshort_edges[a.from] ||= [] of Edge) << a
+          @reshort_nodes.add a.from
         }
       end
 
       def add_sub(sub : Sub)
-        @sub.add sub
+        @subs.add sub
         _add_sub sub
       end
 
       def update_shortest
-        return unless @reshort_edges.empty?
-        SHORTEST_ALG.update_shortest
-        @reshort_edges.clear
+        return if @reshort_nodes.empty?
+        SHORTEST_ALG.update_shortest @source, @pathes, @reshort_nodes, @host_edges
+        @reshort_nodes.clear
       end
 
       def initialize(@source)

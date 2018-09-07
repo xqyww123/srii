@@ -4,8 +4,10 @@ module SRII
   class Host
     struct Identity
       getter pubkey : OpenSSL::EC::Point
+      getter hash : UInt64
 
       def initialize(@pubkey)
+        @hash = to_bytes.hash
       end
 
       def to_bytes
@@ -25,10 +27,19 @@ module SRII
 
       def initialize(pull : MessagePack::Unpacker)
         @pubkey = OpenSSL::EC::Point.from_bytes GROUP, pull.read_binary
+        @hash = to_bytes.hash
       end
 
       def to_msgpack(packer : MessagePack::Packer)
         packer.write to_bytes
+      end
+
+      def inspect(io : IO)
+        io << to_bytes.hexstring
+      end
+
+      def to_s(io : IO)
+        io << to_bytes.hexstring
       end
     end
 
@@ -37,7 +48,7 @@ module SRII
     MessagePack.mapping({identity: {key: "i", type: Identity}},
       strict: true, emit_nulls: false)
 
-    def initialize(@identity)
+    private def initialize(@identity)
     end
 
     @@host_cnt : Int32 = 0
@@ -51,7 +62,20 @@ module SRII
     delegate pubkey, to: @identity
     def_equals_and_hash @identity
 
+    def to_s(io : IO)
+      io << "Host#"
+      @ref_id.to_s io
+      io << '('
+      @identity.to_s io
+      io << ')'
+    end
+
+    def inspect(io : IO)
+      to_s io
+    end
+
     @@hosts = {} of Identity => Host
+    @@hosts_index = {} of Int32 => Host
 
     def self.host(id : Identity)
       @@hosts.fetch id do
@@ -59,8 +83,19 @@ module SRII
       end
     end
 
+    def self.host(i : Int32)
+      @@hosts_index.fetch i do
+        raise HostIndNotRegistered.new i
+      end
+    end
+
     def self.register_host(id : Identity)
-      @@hosts[id] ||= Host.new id
+      if @@hosts[id]?
+        raise HostHasRegistered.new id
+      else
+        @@hosts[id] = host = new id
+        @@hosts_index[host.ref_id] = host
+      end
       # TODO : verification & info
     end
 
