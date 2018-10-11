@@ -102,6 +102,10 @@ module SRII
       ret.remove_lst{{name_subfix.id}}
     end
 
+    def clean
+      @head.remove_lst{{name_subfix.id}}
+    end
+
     include Iterable(T)
     include Enumerable(T)
     def each
@@ -128,9 +132,9 @@ module SRII
         def next : T | Stop
           return Stop::INSTANCE if (c = @current).is_a? Stop
           t = c.\{{forward.id}}{{name_subfix.id}}.not_nil!
-          t = Stop::INSTANCE if t.is_a? Head
+          return @current = Stop::INSTANCE if t.is_a? Head
           @current = t
-          t.is_a?(Stop) ? t : t.as_element
+          t.as_element
         end
 
         def rewind

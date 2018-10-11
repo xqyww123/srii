@@ -57,7 +57,8 @@ module SRII
       @@host_cnt += 1
     end
 
-    getter ref_id : Int32 = assign_id
+    alias Ref = Int32
+    getter ref_id : Ref = assign_id
 
     delegate pubkey, to: @identity
     def_equals_and_hash @identity
@@ -74,20 +75,22 @@ module SRII
       to_s io
     end
 
-    @@hosts = {} of Identity => Host
-    @@hosts_index = {} of Int32 => Host
+    @@hosts = {} of Identity => Host | Group
+    @@hosts_index = {} of Int32 => Host | Group
 
-    def self.host(id : Identity)
+    {% for element in [:host, :group] %}
+    def self.{{element.id}}(id : Identity) : {{element.id.camelcase}}
       @@hosts.fetch id do
         raise HostNotRegistered.new id
-      end
+      end.as {{element.id.camelcase}}
     end
 
-    def self.host(i : Int32)
+    def self.{{element.id}}(i : Int32) : {{element.id.camelcase}}
       @@hosts_index.fetch i do
         raise HostIndNotRegistered.new i
-      end
+      end.as {{element.id.camelcase}}
     end
+    {% end %}
 
     def self.register_host(id : Identity)
       if @@hosts[id]?
@@ -103,6 +106,8 @@ module SRII
       include MessagePack::Serializable
 
       getter hosts : Array(Host)
+
+      # getter identity : Identity
 
       def initialize(@hosts)
       end

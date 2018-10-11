@@ -7,6 +7,8 @@ authors:
 dependencies:
   msgpack:
     github: crystal-community/msgpack-crystal
+  bridge:
+    github: xqyww123/bridge.cr
 
 targets:
   srii:

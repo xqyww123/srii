@@ -6,4 +6,7 @@
 # VIM
 *~
 *.swp
-
+# crypto
+/crypto/lib/
+/crypto/relic/
+/crypto/relic_src/

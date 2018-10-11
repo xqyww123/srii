@@ -94,13 +94,24 @@ module SRII
       end
 
       def remove_sub(sub : Sub)
-        @subs.remove sub
+        p 123123
+        @subs.delete sub
         sub.edges.each { |a|
           a.remove_lst_forward
           a.remove_lst_reverse
-          path = @pathes[a]?
-          path.invalid do |host|
+          p 123
+          p a
+          path = @pathes[a.toto]
+          next unless path.edge == a
+          p "aaa"
+          p path.host
+          p path.latency
+          path.invalid do |path|
+            host = path.host.not_nil!
+            p path
+            puts "invalid #{host}"
             @host_edges_reverse[host].try &.each { |b|
+              puts "reshort #{b.from}"
               @reshort_nodes.add b.from
             }
           end if path
@@ -122,6 +133,7 @@ module SRII
 
       def update_shortest
         return if @reshort_nodes.empty?
+        p @reshort_nodes
         SHORTEST_ALG.update_shortest @source, @pathes, @reshort_nodes, @host_edges
         @reshort_nodes.clear
       end
@@ -134,21 +146,23 @@ module SRII
       end
 
       class Path
-        property first : Edge?
-        property last : Edge?
+        SRII.link_list path
+        include LinkLstPath::Node(Path)
+        getter successors = LinkLstPath(Path).new
+        property first_jump : Edge?
+        property edge : Edge?
         property latency : UInt64 = UInt64::MAX
-        property successor : Path?
-        property brother : Path?
+        getter host : Host
 
-        def successors
-          SuccessorIterator.new @append
+        def initialize(@host)
         end
 
-        def append(path : Path)
-          @successor.try &.brother = @successor
-          @successor = path
-          path.first = @first
-          path.last = self
+        def append(path : Path, edge : Edge)
+          path.remove_lst_path
+          path.first_jump = @first_jump || edge
+          path.edge = edge
+          path.latency = @latency + edge.latency
+          @successors << path
           self
         end
 
@@ -156,21 +170,31 @@ module SRII
           @latency == UInt64::MAX
         end
 
-        def invalid(&block)
+        def _fast_invalid(&block : Path -> _)
           return if invalid?
           @latency = UInt64::MAX
           yield self
-          successors.each &.invalid &block
-          @successor = @first = @last = nil
+          successors.each &._fast_invalid &block
+          @first_jump = @edge = nil
+        end
+
+        def invalid(&block : Path -> _)
+          return if invalid?
+          _fast_invalid &block
+          successors.clean
+          remove_lst_path
+          self
         end
 
         def invalid
           invalid { }
         end
 
+        delegate inspect, to_s, to: @edge
+
         class Set < Hash(Host, Path)
           def fetch(host : Host) : Path
-            fetch(host) { |key| self[key] = Path.new }
+            fetch(host) { |key| self[key] = Path.new key }
           end
         end
       end

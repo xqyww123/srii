@@ -9,6 +9,7 @@ module SRII
                                edges : Hash(Host, IterableEdge)) forall IterableEdge
         pathes[source].latency = 0
         queue = Deque(Host).new
+        # TODO : replace by BitArray of size of all registered hosts
         in_que = Set(Host).new
         reshort_nodes.each { |node|
           next if pathes[node].invalid?
@@ -17,20 +18,21 @@ module SRII
         }
         # p "aaaaaaa"
         until queue.empty?
-          now = queue.pop
-          # puts "on #{now}"
+          now = queue.shift
+          now_path = pathes[now]
+          puts "on #{now}"
           edges[now]?.try &.each { |e|
-            len = pathes[now].latency + e.latency
+            len = now_path.latency + e.latency
             # p pathes[now]
             # puts "-> #{e.toto} : #{pathes[e.toto].latency}"
             # prevent overflow
-            if len >= pathes[now].latency && len < pathes[e.toto].latency
+            if len >= now_path.latency && len < pathes[e.toto].latency
               # puts "shorten #{e}"
               unless in_que.includes? e.toto
                 queue.push e.toto
                 in_que.add e.toto
               end
-              pathes[e.toto].latency = len
+              now_path.append pathes[e.toto], e
               # p pathes[e.toto]
             end
           }

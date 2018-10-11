@@ -1,6 +1,10 @@
 version: 1.0
 shards:
-  protobuf:
-    github: jeromegn/protobuf.cr
-    version: 2.1.2
+  bridge:
+    github: xqyww123/bridge.cr
+    commit: 97bac7f5abd2d264be4f0d7ff789192c612850f8
+
+  msgpack:
+    github: crystal-community/msgpack-crystal
+    version: 0.10.0
 

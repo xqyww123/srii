@@ -1,6 +1,5 @@
 require "../spec_helper.cr"
 
-alias Address = Router::Address
 alias Edge = Router::Edge
 alias Graph = Router::Graph
 describe Router do
@@ -42,6 +41,49 @@ describe Router do
         path.invalid?.should be_false
         path.latency
       }.to_a.should eq [500000001_u64, 5083333336_u64, 5500000002_u64, 3833333335_u64, 0_u64]
+    end
+    it "reshort updated subs" do
+      graph = Graph.new get_host 1
+      graph.add_sub make_subgraph_isolated
+      (2..5).each.each { |i|
+        host = get_host i
+        path = graph.path host
+        path.invalid?.should be_true
+      }
+      graph.add_sub make_subgraph
+      (1..5).each.map { |i|
+        host = get_host i
+        path = graph.path host
+        path.invalid?.should be_false
+        path.latency
+      }.to_a.should eq [0u64, 4583333335_u64, 5000000001_u64, 3333333334_u64, 4444444446_u64]
+      (6..9).each { |i|
+        host = get_host i
+        path = graph.path host
+        path.invalid?.should be_true
+      }
+      bridge = make_subgraph_bridge
+      graph.add_sub bridge
+      (1..9).each.map { |i|
+        host = get_host i
+        path = graph.path host
+        puts path.successors.to_a
+        path.invalid?.should be_false
+        path.latency
+      }.to_a.should eq [0_u64, 4583333335_u64, 5000000001_u64, 3333333334_u64, 4444444446_u64, 4494444447_u64, 4594444448_u64, 4894444448_u64, 4794444449_u64]
+      graph.remove_sub bridge
+      (1..5).each.map { |i|
+        host = get_host i
+        path = graph.path host
+        path.invalid?.should be_false
+        path.latency
+      }.to_a.should eq [0u64, 4583333335_u64, 5000000001_u64, 3333333334_u64, 4444444446_u64]
+      (6..9).each { |i|
+        host = get_host i
+        path = graph.path host
+        path.invalid?.should be_true
+      }
+      bridge = make_subgraph_bridge
     end
   end
 end
