@@ -20,7 +20,7 @@ module SRII
         until queue.empty?
           now = queue.shift
           now_path = pathes[now]
-          puts "on #{now}"
+          # puts "on #{now}"
           edges[now]?.try &.each { |e|
             len = now_path.latency + e.latency
             # p pathes[now]

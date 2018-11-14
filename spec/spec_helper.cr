@@ -3,11 +3,11 @@ require "../src/srii"
 
 include SRII
 alias Bignum = OpenSSL::Bignum
-include OpenSSL::EC
 alias Host = SRII::Host
+alias PubKey = SRII::Crypto::PubKey
 
 def make_identity(i : Int)
-  Host::Identity.new Point.mul_generator Config::EC::GROUP, Bignum.new i
+  Host::Identity.new PubKey.new i
 end
 
 10.times { |i| Host.register_host make_identity i + 1 }
@@ -75,6 +75,12 @@ class File
       ret = Bytes.new f.size
       f.read_fully ret
       ret
+    end
+  end
+
+  def self.write_bytes(filename, data)
+    open(filename, "w") do |f|
+      f.write data
     end
   end
 end

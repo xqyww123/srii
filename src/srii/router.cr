@@ -94,21 +94,14 @@ module SRII
       end
 
       def remove_sub(sub : Sub)
-        p 123123
         @subs.delete sub
         sub.edges.each { |a|
           a.remove_lst_forward
           a.remove_lst_reverse
-          p 123
-          p a
           path = @pathes[a.toto]
           next unless path.edge == a
-          p "aaa"
-          p path.host
-          p path.latency
           path.invalid do |path|
             host = path.host.not_nil!
-            p path
             puts "invalid #{host}"
             @host_edges_reverse[host].try &.each { |b|
               puts "reshort #{b.from}"
@@ -133,7 +126,6 @@ module SRII
 
       def update_shortest
         return if @reshort_nodes.empty?
-        p @reshort_nodes
         SHORTEST_ALG.update_shortest @source, @pathes, @reshort_nodes, @host_edges
         @reshort_nodes.clear
       end
@@ -193,8 +185,10 @@ module SRII
         delegate inspect, to_s, to: @edge
 
         class Set < Hash(Host, Path)
-          def fetch(host : Host) : Path
-            fetch(host) { |key| self[key] = Path.new key }
+          def initialize
+            super(->(h : Hash(Host, Path), k : Host) {
+              h[k] = Path.new k
+            })
           end
         end
       end

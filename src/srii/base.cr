@@ -1,45 +1,43 @@
-require "./ec.cr"
+require "./crypto.cr"
 
 module SRII
   class Host
     struct Identity
-      getter pubkey : OpenSSL::EC::Point
-      getter hash : UInt64
+      getter pubkey : Crypto::PubKey
+
+      # getter digest : Bytes
 
       def initialize(@pubkey)
-        @hash = to_bytes.hash
+        # @digest = Config.digest @pubkey.to_bytes
       end
 
-      def to_bytes
-        @pubkey.to_bytes ::SRII::Config::EC::GROUP,
-          OpenSSL::EC::Point::ConversionForm::Compressed
-      end
+      delegate to_bytes, hash, free, to: @pubkey
 
       GROUP = Config::EC::GROUP
 
-      def ==(o : OpenSSL::EC::Point)
-        @pubkey.equal GROUP, o
-      end
-
-      def ==(o : Identity)
-        self == o.pubkey
-      end
-
       def initialize(pull : MessagePack::Unpacker)
-        @pubkey = OpenSSL::EC::Point.from_bytes GROUP, pull.read_binary
-        @hash = to_bytes.hash
+        @pubkey = Crypto::PubKey.new pull.read_binary
       end
 
       def to_msgpack(packer : MessagePack::Packer)
         packer.write to_bytes
       end
 
+      def ==(o : Crypto::PubKey)
+        @pubkey == o
+      end
+
+      def ==(o : Identity)
+        self == o.pubkey
+      end
+
       def inspect(io : IO)
-        io << to_bytes.hexstring
+        to_s io
       end
 
       def to_s(io : IO)
-        io << to_bytes.hexstring
+        # io << @digest.hexstring
+        hash.to_s 16, io
       end
     end
 
@@ -49,6 +47,10 @@ module SRII
       strict: true, emit_nulls: false)
 
     private def initialize(@identity)
+    end
+
+    def finalize
+      @identity.free
     end
 
     @@host_cnt : Int32 = 0
