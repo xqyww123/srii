@@ -2,6 +2,26 @@
 
 TODO: Write a description here
 
+## TODO List
+
+- control interface : 2week
+- virtualize node : 1week
+- user script : 4week
+    - syntax : 1 week
+    - interpret : 1 week
+    - connect to control interface : 1 week
+    - generate & apply the router configure : 1 week
+- send between nodes : 5 weeks
+    - A TCP connection driver for `bridge` : 3 week
+        - TCP connection : 1 week
+        - connnection control, reconnect : 1 week
+        - muliplex : 1 week
+    - call the driver in srii : 1 week
+    - signature generate & verification : 1 week
+- router update : 2 week
+
+total: 3.5 months.
+
 ## Installation
 
 TODO: Write installation instructions here
